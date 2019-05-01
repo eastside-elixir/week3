@@ -56,21 +56,28 @@ defmodule Mastermind do
   @colors 6
   @max_turns 10
 
-  # Hint: the new game function has to return the
-  # structure containing the state for a new game.
-  # This variant is called to generate a random target
   def new_game() do
+    new_game(generate_target())
   end
 
-  # and this one is used when we want to specify the target
-  # (which we use when we cheat, or when we run tests)
   def new_game(target) do
+    %Mastermind.State{
+      target: target,
+      width: @width,
+      colors: @colors,
+      turns_left: @max_turns
+    }
   end
 
-  # Hint: make_guess applies a guess to the game state
-  # and returns an updated game state. Three fields will
-  # need to be updated: turns_left, moves, and won.
   def make_guess(game, guess) when is_list(guess) do
+    move = %Mastermind.State.Move
+      {guess: guess, score: score_guess(guess, game.target)}
+
+    %{ game |
+      turns_left: game.turns_left - 1,
+      moves: [move | game.moves],
+      won: guess == game.target
+    }
   end
 
 
@@ -81,5 +88,19 @@ defmodule Mastermind do
 
     1..@width
     |> Enum.map(fn _ -> Enum.random(possibles) end)
+  end
+
+  def score_guess(guess, target) do
+    dodges = length(target) - length(target -- guess)
+    hits = matches(guess, target)
+    %{:reds => hits, :whites => dodges - hits}
+  end
+
+  def matches([], []), do: 0
+  def matches([h1|t1], [h2|t2]), do: bti(h1 == h2) + matches(t1, t2)
+
+  # Boolean to integer
+  def bti(b) do
+    if b, do: 1, else: 0
   end
 end
